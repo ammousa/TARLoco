@@ -203,7 +203,6 @@ class OnPolicyRunner:
                 # log config only if not continuing a run
                 if not self.cfg["wandb_continue_run"]:
                     self.writer.log_config(
-                        env_cfg=self.env.cfg,
                         runner_cfg=self.cfg,
                         alg_cfg=self.cfg["algorithm"],
                         policy_cfg=self.cfg["policy"],

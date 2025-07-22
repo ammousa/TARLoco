@@ -24,7 +24,7 @@ class Go1RoughPpoRunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
     max_iterations = 1500
     save_interval = 100
-    experiment_name = "unitree_go1_rough"
+    experiment_name = "TAR_workspace"
     empirical_normalization = True
     policy = RslRlPpoActorCriticCfg(  # teacher policy if distil is used
         class_name="ActorCriticMlp",
@@ -64,7 +64,7 @@ class Go1RoughRnnRunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
     max_iterations = 5000
     save_interval = 100  # Checkpointing interval
-    experiment_name = "unitree_go1_rough"
+    experiment_name = "TAR_workspace"
     empirical_normalization = True
     policy = RslRlRnnPpoActorCriticCfg(
         class_name="ActorCriticRnnDblEnc",
