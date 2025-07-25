@@ -250,16 +250,18 @@ class HIMEstimator(nn.Module):
             vel, latent = self.estimator(obs_hist.reshape(obs_hist.shape[0], -1))
         return vel, latent
 
-    def update(self, obs_history, next_critic_obs, lr=None):
+    def update(self, obs_history, next_obs, next_critic_obs, lr=None):
         if lr is not None:
             self.learning_rate = lr
             for param_group in self.optimizer.param_groups:
                 param_group["lr"] = self.learning_rate
         next_critic_obs = next_critic_obs.reshape(next_critic_obs.shape[0], -1)
-        vel = next_critic_obs[
-            :, self.num_one_step_obs : self.num_one_step_obs + 3
-        ].detach()  # true velocity from privileged obs
-        next_obs = next_critic_obs[:, : self.num_one_step_obs].detach()  # without height
+        vel = next_critic_obs[:, :3].detach()  # true velocity from privileged obs
+        # next_obs = next_critic_obs[:, 3:self.num_one_step_obs + 3].detach()
+        # Note: The original implementation in HIMLoco incorrectly slices the critic observations to obtain the next true observations.
+        # This approach is flawed because the noise sampling and normalizers of the critic differs from that of the actor.
+        # The correct next true observations should be retrieved from the storage, not derived from the critic's observations.
+        next_obs = next_obs[:, -1, :].detach()
 
         z_s = self.encoder(obs_history.reshape(obs_history.shape[0], -1))
         z_t = self.target(next_obs)

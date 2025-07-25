@@ -12,15 +12,16 @@
 # This version includes significant modifications by Amr Mousa (2025).
 
 import math
+import yaml
 import os
 import random
 import subprocess
-from typing import List, Union
+from dataclasses import asdict
+from typing import Tuple, Any, List, Union
 
 import gymnasium as gym
 import numpy as np
 import torch
-from isaaclab.utils.dict import print_dict
 from isaacsim.core.utils.viewports import set_camera_view
 
 
@@ -108,17 +109,44 @@ class RecordVideo(gym.wrappers.RecordVideo):
 # ------------------
 
 
-def print_hydra_tree(cfg: tuple) -> None:
-    """Print the hydra configuration tree."""
-    # print hydra configurations
-    print(f"[INFO]: Hydra args: \n")
-    print_dict(cfg[0], nesting=2)
+def dump_hydra_config(cfg: Tuple[Any, Any, Any], logdir: str) -> None:
+    """
+    Dump the Hydra configuration tree to a YAML file in the log directory.
 
-    print(f"[INFO]: Hydra env: \n")
-    print_dict(cfg[1].to_dict(), nesting=2)
+    Args:
+        cfg (Tuple): Tuple containing (args, env_config, agent_config)
+        logdir (str): Path to the directory where the config should be saved
+    """
+    hydra_config_path = os.path.join(logdir, "hydra_config.yaml")
+    os.makedirs(os.path.dirname(hydra_config_path), exist_ok=True)  # Make sure directory exists
 
-    print(f"[INFO]: Hydra agent: \n")
-    print_dict(cfg[2].to_dict(), nesting=2)
+    try:
+        hydra_config = {
+            "args": cfg[0],
+            "env": asdict(cfg[1]),
+            "agent": asdict(cfg[2]),
+        }
+
+        def flatten_dict(d, parent_key='', sep='.'):
+            items = []
+            for k, v in d.items():
+                new_key = f"{parent_key}{sep}{k}" if parent_key else k
+                if isinstance(v, dict):
+                    items.extend(flatten_dict(v, new_key, sep=sep).items())
+                else:
+                    items.append((new_key, v))
+            return dict(items)
+
+        flat_hydra_config = flatten_dict(hydra_config)
+
+        os.makedirs(logdir, exist_ok=True)
+        with open(hydra_config_path, "w") as f:
+            yaml.dump(flat_hydra_config, f, default_flow_style=False)
+
+        print(f"[INFO]: Flattened Hydra config dumped to {hydra_config_path}")
+
+    except Exception as e:
+        print(f"[ERROR]: Failed to dump Hydra config: {e}")
 
 
 def replace_string_in_object(obj, target_string, replacement):

@@ -98,3 +98,23 @@ class HimGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
         del self.observations.critic.feet_contact_z
         del self.observations.critic.contact_friction
         del self.observations.critic.base_mass
+
+
+@configclass
+class TeacherGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
+    """Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        """Override the observations attribute after initialization."""
+        super().__post_init__()
+
+        # Update observation space cfg
+        self.observations = FullObservationsCfg()
+
+        # Policy
+        self.observations.policy.history_length = 1
+        self.observations.policy.flatten_history_dim = False
+
+        # Critic
+        self.observations.critic.history_length = 1
+        self.observations.critic.flatten_history_dim = False

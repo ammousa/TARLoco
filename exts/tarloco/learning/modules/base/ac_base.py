@@ -187,8 +187,12 @@ class ActorCriticRnn(ActorCriticMlp):
             rnn_out_features = num_actor_obs
         assert rnn_out_features >= 0, "[ERROR] rnn_out_features must be a non-negative integer"
 
-        self.num_policy_obs = num_actor_obs + (rnn_out_features if self.arch == "augmented" else 0)
-        self.num_critic_obs = num_critic_obs + (rnn_out_features if self.arch == "augmented" else 0)
+        if self.arch == "integrated":
+            self.num_policy_obs = rnn_hidden_dims[-1]
+            self.num_critic_obs = rnn_hidden_dims[-1]
+        else:
+            self.num_policy_obs = num_actor_obs + (rnn_out_features if self.arch == "augmented" else 0)
+            self.num_critic_obs = num_critic_obs + (rnn_out_features if self.arch == "augmented" else 0)
 
         super().__init__(
             num_actor_obs=self.num_policy_obs,

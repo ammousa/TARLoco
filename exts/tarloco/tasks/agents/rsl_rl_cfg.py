@@ -54,6 +54,39 @@ class Go1RoughPpoRunnerCfg(RslRlOnPolicyRunnerCfg):
     )
 
 
+@configclass
+class Go1RoughPpoExpertRunnerCfg(Go1RoughPpoRunnerCfg):
+    policy = RslRlPpoSlrActorCriticCfg(
+        class_name="ActorCriticMlpDblEncExpert",
+        num_hist=1,
+        latent_dims=20,
+        init_noise_std=1.0,
+        clip_action=100.0,
+        squash_mode="clip",
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        mlp_encoder_dims=[256, 128, 64],
+        activation="elu",
+        trans_hidden_dims=[256, 128],  # not used in this policy, but required for the config to be valid
+    )
+    algorithm = RslRlPpoAlgorithmCfg(
+        class_name="PPO",
+        value_loss_coef=1.0,
+        use_clipped_value_loss=True,
+        clip_param=0.2,
+        entropy_coef=0.01,
+        num_learning_epochs=5,
+        num_mini_batches=4,
+        lr_max=1.0e-3,
+        lr_min=1.0e-5,
+        schedule="adaptive",
+        gamma=0.99,
+        lam=0.95,
+        desired_kl=0.01,
+        max_grad_norm=1.0,
+        optimizer="Adam",
+    )
+
 # =============================
 #         RNN POLICIES
 # =============================
@@ -75,11 +108,13 @@ class Go1RoughRnnRunnerCfg(RslRlOnPolicyRunnerCfg):
         critic_hidden_dims=[512, 256, 128],
         activation="elu",
         # RNN specific
-        arch_type="direct",
+        arch_type="augmented",
         rnn_type="lstm",
         rnn_hidden_dims=[512],
+        rnn_out_features=20,  # latent_dims of augmented lstm
     )
     algorithm = RslRlPpoAlgorithmCfg(
+        class_name="PPO",
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
         clip_param=0.2,
@@ -224,7 +259,7 @@ class Go1PpoHimRunnerCfg(Go1RoughPpoRunnerCfg):
     num_steps_per_env = 24
     max_iterations = 1500
     save_interval = 100
-    experiment_name = "go1_experiment"
+    experiment_name = "TAR_workspace"
     empirical_normalization = True
     policy = RslRlPpoActorCriticCfg(  # teacher policy if distil is used
         class_name="ActorCriticHIM",

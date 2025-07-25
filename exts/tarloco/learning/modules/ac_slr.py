@@ -206,3 +206,76 @@ class ActorCriticMlpSlrDblEnc(ActorCriticMlpSlr):
         critic_obs = torch.cat([z, obs_tuple[1]], dim=-1)
         value = self.critic(critic_obs)
         return value
+
+
+class ActorCriticMlpDblEncExpert(ActorCriticMlpSlrDblEnc):
+    def __init__(
+        self,
+        num_actor_obs: int,
+        num_critic_obs: int,
+        num_actions: int,
+        num_hist: int,
+        latent_dims: int = 20,
+        actor_hidden_dims: list[int] = [256, 128, 128],
+        critic_hidden_dims: list[int] = [512, 256, 256],
+        mlp_encoder_dims: list[int] = [256, 128, 64],
+        activation: str = "elu",
+        init_noise_std: float = 1.0,
+        noise_std_type: str = "scalar",
+        clip_action: float = 100.0,
+        squash_mode: str = "clip",  # 'tanh' or 'clip'
+        trans_hidden_dims: list[int] = [32],
+    ):
+        super().__init__(
+            num_actor_obs=num_actor_obs,
+            num_critic_obs=num_critic_obs,
+            num_actions=num_actions,
+            num_hist=num_hist,
+            latent_dims=latent_dims,
+            actor_hidden_dims=actor_hidden_dims,
+            critic_hidden_dims=critic_hidden_dims,
+            mlp_encoder_dims=mlp_encoder_dims,
+            activation=activation,
+            init_noise_std=init_noise_std,
+            noise_std_type=noise_std_type,
+            clip_action=clip_action,
+            squash_mode=squash_mode,
+            trans_hidden_dims=trans_hidden_dims,
+        )
+        self.num_hist = int(num_hist)
+        self.num_obs_h1 = 48
+        self.num_latents = latent_dims
+
+        self.encoder = mlp_factory(
+            activation=resolve_nn_activation(activation),
+            input_dims=num_actor_obs - 48,
+            out_dims=latent_dims,
+            hidden_dims=mlp_encoder_dims,
+        )
+        self.encoder_critic = mlp_factory(
+            activation=resolve_nn_activation(activation),
+            input_dims=num_critic_obs - 48,
+            out_dims=latent_dims,
+            hidden_dims=mlp_encoder_dims,
+        )
+        self.actor = AcNet(
+            is_policy=True,
+            num_out=num_actions,
+            num_obs=48 + self.num_latents,
+            hidden_dims=actor_hidden_dims,
+            activation=activation,
+        )
+        self.critic = AcNet(
+            is_policy=False,
+            num_out=1,  # Critic output is a single value
+            num_obs=48 + self.num_latents,
+            hidden_dims=critic_hidden_dims,
+            activation=activation,
+        )
+
+    def extract(self, observations):
+        if observations.dim() == 2:
+            observations = observations.unsqueeze(0)
+        prop = observations[:, -1, :48]
+        priv = observations[:, -1, 48:]
+        return priv, prop

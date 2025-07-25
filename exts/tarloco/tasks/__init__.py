@@ -48,6 +48,21 @@ registry = {
         env_cfg_entry_point=envs.HimGo1LocomotionVelocityRoughEnvCfg,
         rsl_rl_cfg_entry_point=agents.Go1PpoHimRunnerCfg,
     ),
+    # ------
+    # Teacher
+    # ------
+    "go1-train-teacher-rough": TaskConfig(
+        env_cfg_entry_point=envs.TeacherGo1LocomotionVelocityRoughEnvCfg,
+        rsl_rl_cfg_entry_point=agents.Go1RoughPpoRunnerCfg,
+    ),
+    "go1-train-teacher-encoder-rough": TaskConfig(
+        env_cfg_entry_point=envs.TeacherGo1LocomotionVelocityRoughEnvCfg,
+        rsl_rl_cfg_entry_point=agents.Go1RoughPpoExpertRunnerCfg,
+    ),
+    "go1-train-teacher-rnn-rough": TaskConfig(
+        env_cfg_entry_point=envs.TeacherGo1LocomotionVelocityRoughEnvCfg,
+        rsl_rl_cfg_entry_point=agents.Go1RoughRnnRunnerCfg,
+    ),
 }
 
 

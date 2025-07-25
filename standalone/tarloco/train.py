@@ -82,12 +82,6 @@ parser.add_argument(
     default=None,
     help="Wandb run name to continue logging.",
 )
-parser.add_argument(
-    "--print_hydra_tree",
-    action="store_true",
-    default=False,
-    help="Print hydra configuration tree and exit the script.",
-)
 # append RSL-RL cli arguments
 cli_args.add_rsl_rl_args(parser)
 # append AppLauncher cli args
@@ -129,7 +123,7 @@ from isaaclab_tasks.utils.hydra import hydra_task_config
 from exts.tarloco.tasks import registry
 from exts.tarloco.utils import (
     get_checkpoint_path,
-    print_hydra_tree,
+    dump_hydra_config,
     remove_empty_dicts,
     seed_everything,
 )
@@ -158,10 +152,6 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg: task_config.agent_cfg):  # ty
     agent_cfg.max_iterations = (
         args_cli.max_iterations if args_cli.max_iterations is not None else agent_cfg.max_iterations
     )
-    # print hydra configurations if requested
-    if args_cli.print_hydra_tree:
-        print_hydra_tree((hydra_args, env_cfg, agent_cfg))
-        return
 
     # seed everything for reproducibility
     seed_everything(args_cli.seed)
@@ -234,6 +224,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg: task_config.agent_cfg):  # ty
         runner.load(resume_path)
 
     # dump the configuration into log-directory
+    dump_hydra_config((hydra_args, env_cfg, agent_cfg), os.path.join(log_dir, "params"))
     dump_yaml(os.path.join(log_dir, "params", "env.yaml"), env_cfg)
     dump_yaml(os.path.join(log_dir, "params", "agent.yaml"), agent_cfg)
     dump_pickle(os.path.join(log_dir, "params", "env.pkl"), env_cfg)

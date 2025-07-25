@@ -63,7 +63,7 @@ class PPOHIM(PPO):
     def _compute_auxiliary_loss(self, batch: dict) -> dict:
         """Compute any auxiliary loss. Override this in subclasses if needed."""
         estimation_loss, swap_loss = self.actor_critic.estimator.update(
-            batch["obs"], batch["next_critic_obs"], lr=self.lr
+            batch["obs"], batch["next_obs"], batch["next_critic_obs"], lr=self.lr
         )
         return {
             "estimation": estimation_loss.detach(),  # detached cuz backprop is already done in estimator.update

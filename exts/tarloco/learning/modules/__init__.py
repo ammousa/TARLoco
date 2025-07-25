@@ -4,7 +4,7 @@
 """Definitions for neural-network components for RL-agents."""
 
 from .ac_him import ActorCriticHIM
-from .ac_slr import ActorCriticMlpSlr, ActorCriticMlpSlrDblEnc
+from .ac_slr import ActorCriticMlpSlr, ActorCriticMlpSlrDblEnc, ActorCriticMlpDblEncExpert
 from .ac_tar import (
     ActorCriticTar,
     ActorCriticTarFt,

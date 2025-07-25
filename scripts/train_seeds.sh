@@ -15,7 +15,7 @@ CUDA_DEVICE=$1
 
 # Define the list of unique commands (excluding --seed as it will be replaced)
 commands=(
-    "python standalone/tarloco/train.py --task go1-train-tar-rnn-rough --max_iterations 20000 --headless --logger wandb --group 'OURS'"
+    "python standalone/tarloco/train.py --task go1-train-him-rough --max_iterations 20000 --headless --logger wandb --group 'HIM'"
 
 )
 
