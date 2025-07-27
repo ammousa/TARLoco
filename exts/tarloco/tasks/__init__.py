@@ -51,17 +51,32 @@ registry = {
     # ------
     # Teacher
     # ------
+    # Plain teacher configuration: Direct feeding to the actor and critic without using an encoder
     "go1-train-teacher-rough": TaskConfig(
         env_cfg_entry_point=envs.TeacherGo1LocomotionVelocityRoughEnvCfg,
         rsl_rl_cfg_entry_point=agents.Go1RoughPpoRunnerCfg,
     ),
+    # Teacher with MLP privileged encoder that concatenates the latents to one-step proprioceptive observations
     "go1-train-teacher-encoder-rough": TaskConfig(
         env_cfg_entry_point=envs.TeacherGo1LocomotionVelocityRoughEnvCfg,
         rsl_rl_cfg_entry_point=agents.Go1RoughPpoExpertRunnerCfg,
     ),
+    # Teacher with RNN privileged encoder that concatenates the latents to one-step proprioceptive observations
     "go1-train-teacher-rnn-rough": TaskConfig(
         env_cfg_entry_point=envs.TeacherGo1LocomotionVelocityRoughEnvCfg,
         rsl_rl_cfg_entry_point=agents.Go1RoughRnnRunnerCfg,
+    ),
+
+    # ------------------------------ Ablation Studies ------------------------------
+    # TAR replacing RNN encoder with 10-steps MLP
+    "go1-train-tar-mlp-rough": TaskConfig(
+        env_cfg_entry_point=envs.TarMlpGo1LocomotionVelocityRoughEnvCfg,
+        rsl_rl_cfg_entry_point=agents.Go1RoughPpoTarRunnerCfg,
+    ),
+    # TAR replacing RNN encoder with TCN
+    "go1-train-tar-tcn-rough": TaskConfig(
+        env_cfg_entry_point=envs.TarTcnGo1LocomotionVelocityRoughEnvCfg,
+        rsl_rl_cfg_entry_point=agents.Go1RoughTcnTarRunnerCfg,
     ),
 }
 

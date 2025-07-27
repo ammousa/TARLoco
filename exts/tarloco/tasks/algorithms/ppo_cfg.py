@@ -19,7 +19,7 @@ from omegaconf import MISSING
 
 
 @configclass
-class RslRlPpoActorCriticCfg:
+class RslRlPpoPolicyCfg:
     """Configuration for the PPO actor-critic networks."""
 
     class_name: str = MISSING
@@ -45,7 +45,7 @@ class RslRlPpoActorCriticCfg:
 
 
 @configclass
-class RslRlPpoSlrActorCriticCfg(RslRlPpoActorCriticCfg):
+class RslRlPpoSlrPolicyCfg(RslRlPpoPolicyCfg):
     """Configuration for the PPO actor-critic networks."""
 
     num_hist: int = 1
@@ -62,7 +62,7 @@ class RslRlPpoSlrActorCriticCfg(RslRlPpoActorCriticCfg):
 
 
 @configclass
-class RslRlRnnPpoActorCriticCfg(RslRlPpoActorCriticCfg):
+class RslRlRnnPpoPolicyCfg(RslRlPpoPolicyCfg):
     """Configuration for the LSTM-PPO actor-critic networks."""
 
     class_name: str = MISSING
@@ -150,11 +150,8 @@ class RslRlOnPolicyRunnerCfg:
     empirical_normalization: bool = MISSING
     """Whether to use empirical normalization."""
 
-    policy: RslRlPpoActorCriticCfg = MISSING
+    policy: RslRlPpoPolicyCfg = MISSING
     """The policy configuration (considered teacher policy in distill env)."""
-
-    student_policy: TransferStudentCfg = MISSING
-    """The student policy configuration."""
 
     algorithm: RslRlPpoAlgorithmCfg = MISSING
     """The algorithm configuration."""
@@ -225,7 +222,15 @@ class RslRlOnPolicyRunnerCfg:
 
 
 @configclass
-class RslRlRnnPpoTarActorCriticCfg(RslRlRnnPpoActorCriticCfg):
+class RslRlPpoTarPolicyCfg(RslRlPpoSlrPolicyCfg):
+    """Configuration for the PPO actor-critic networks."""
+
+    num_hist_short: int = 1
+    """The number of history steps to use for velocity estimator."""
+
+
+@configclass
+class RslRlRnnTarPolicyCfg(RslRlRnnPpoPolicyCfg, RslRlPpoTarPolicyCfg):
     """Configuration for the RNN-PPO actor-critic networks."""
 
     num_hist: int = 1

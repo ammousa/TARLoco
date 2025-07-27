@@ -10,6 +10,7 @@ from .ac_tar import (
     ActorCriticTarFt,
     ActorCriticTarRnn,
     ActorCriticTarRnnFt,
+    ActorCriticTarTcn,
 )
 from .base.ac_base import ActorCriticMlp, ActorCriticRnn, ActorCriticRnnDblEnc
 from .utils import mlp_factory

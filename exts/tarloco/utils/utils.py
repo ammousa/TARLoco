@@ -16,7 +16,7 @@ import yaml
 import os
 import random
 import subprocess
-from dataclasses import asdict
+from dataclasses import fields, is_dataclass
 from typing import Tuple, Any, List, Union
 
 import gymnasium as gym
@@ -108,6 +108,19 @@ class RecordVideo(gym.wrappers.RecordVideo):
 # Hydra functions
 # ------------------
 
+def safe_asdict(obj):
+    """Recursively convert dataclass to dict, ignoring inaccessible fields."""
+    if not is_dataclass(obj):
+        return obj
+    result = {}
+    for f in fields(obj):
+        try:
+            value = getattr(obj, f.name)
+            result[f.name] = safe_asdict(value)
+        except Exception as e:
+            result[f.name] = f"[error: {e}]"
+    return result
+
 
 def dump_hydra_config(cfg: Tuple[Any, Any, Any], logdir: str) -> None:
     """
@@ -123,8 +136,8 @@ def dump_hydra_config(cfg: Tuple[Any, Any, Any], logdir: str) -> None:
     try:
         hydra_config = {
             "args": cfg[0],
-            "env": asdict(cfg[1]),
-            "agent": asdict(cfg[2]),
+            "env": safe_asdict(cfg[1]),
+            "agent": safe_asdict(cfg[2]),
         }
 
         def flatten_dict(d, parent_key='', sep='.'):

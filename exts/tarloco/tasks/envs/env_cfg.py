@@ -26,7 +26,7 @@ class TarGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
     """Configuration for Rough terrain."""
 
     def __post_init__(self):
-        """Override the observations attribute after initialization."""
+        """Override attributes after initialization."""
         super().__post_init__()
 
         # Update observation space cfg
@@ -48,11 +48,33 @@ class TarGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
 
 
 @configclass
+class TarMlpGo1LocomotionVelocityRoughEnvCfg(TarGo1LocomotionVelocityRoughEnvCfg):
+    """Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        """Override attributes after initialization."""
+        super().__post_init__()
+        # Policy
+        self.observations.policy.history_length = 10
+
+
+@configclass
+class TarTcnGo1LocomotionVelocityRoughEnvCfg(TarGo1LocomotionVelocityRoughEnvCfg):
+    """Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        """Override attributes after initialization."""
+        super().__post_init__()
+        # Policy
+        self.observations.policy.history_length = 50
+
+
+@configclass
 class SlrGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
     """Configuration for Rough terrain."""
 
     def __post_init__(self):
-        """Override the observations attribute after initialization."""
+        """Override attributes after initialization."""
         super().__post_init__()
 
         # Policy
@@ -76,7 +98,7 @@ class HimGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
     """Configuration for Rough terrain."""
 
     def __post_init__(self):
-        """Override the observations attribute after initialization."""
+        """Override attributes after initialization."""
         super().__post_init__()
 
         # Update observation space cfg
@@ -105,7 +127,7 @@ class TeacherGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
     """Configuration for Rough terrain."""
 
     def __post_init__(self):
-        """Override the observations attribute after initialization."""
+        """Override attributes after initialization."""
         super().__post_init__()
 
         # Update observation space cfg

@@ -17,7 +17,7 @@ from typing import List
 import torch
 from rsl_rl.utils import resolve_nn_activation
 
-from exts.tarloco.learning.modules.utils import mlp_factory
+from exts.tarloco.learning.modules.utils import mlp_factory, tcn_factory
 from exts.tarloco.utils import unpad_trajectories
 
 from .ac_slr import ActorCriticMlpSlrDblEnc
@@ -162,7 +162,6 @@ class ActorCriticTarRnn(ActorCriticTar, ActorCriticRnn):
         num_actor_obs: int,
         num_critic_obs: int,
         num_actions: int,
-        num_hist: int,
         num_hist_short: int = 4,
         latent_dims: int = 20,
         actor_hidden_dims: list[int] = [256, 128, 128],
@@ -182,7 +181,7 @@ class ActorCriticTarRnn(ActorCriticTar, ActorCriticRnn):
             num_actor_obs=num_actor_obs,
             num_critic_obs=num_critic_obs,
             num_actions=num_actions,
-            num_hist=num_hist,
+            num_hist=num_hist_short,
             num_hist_short=num_hist_short,
             latent_dims=latent_dims,
             actor_hidden_dims=actor_hidden_dims,
@@ -292,6 +291,83 @@ class ActorCriticTarRnn(ActorCriticTar, ActorCriticRnn):
         critic_obs = torch.cat([z, prop.squeeze(), vel.squeeze()], dim=-1)
         value = self.critic(critic_obs)
         return value, hidden_states  # for hidden states
+
+
+class ActorCriticTarTcn(ActorCriticTar):
+    is_recurrent = False
+
+    def __init__(
+        self,
+        num_actor_obs: int,
+        num_critic_obs: int,
+        num_actions: int,
+        num_hist: int,
+        num_hist_short: int = 4,
+        latent_dims: int = 20,
+        actor_hidden_dims: list[int] = [256, 128, 128],
+        critic_hidden_dims: list[int] = [512, 256, 256],
+        vel_encoder_dims: list[int] = [64, 32],
+        activation: str = "elu",
+        init_noise_std: float = 1.0,
+        clip_action: float = 100.0,
+        squash_mode: str = "clip",  # 'tanh' or 'clip'
+        trans_hidden_dims: list[int] = [32],
+        # TCN
+        tcn_hidden_channels: list[int] = [32, 32, 32],
+        tcn_kernel_sizes: list[int] = [8, 5, 5],
+        tcn_strides: list[int] = [4, 1, 1],
+        **kwargs,
+    ):
+        super().__init__(
+            num_actor_obs=num_actor_obs,
+            num_critic_obs=num_critic_obs,
+            num_actions=num_actions,
+            num_hist=num_hist,
+            num_hist_short=num_hist_short,
+            latent_dims=latent_dims,
+            actor_hidden_dims=actor_hidden_dims,
+            critic_hidden_dims=critic_hidden_dims,
+            vel_encoder_dims=vel_encoder_dims,
+            activation=activation,
+            init_noise_std=init_noise_std,
+            clip_action=clip_action,
+            squash_mode=squash_mode,
+            trans_hidden_dims=trans_hidden_dims,
+            **kwargs,
+        )
+
+        self.encoder = tcn_factory(
+            input_channels=self.num_obs_h1,
+            output_dims=latent_dims,
+            num_hist=self.num_hist,
+            hidden_channels=tcn_hidden_channels,
+            kernel_sizes=tcn_kernel_sizes,
+            strides=tcn_strides,
+            activation=resolve_nn_activation(activation),  # type: ignore
+            last_act=True,
+        )
+
+    def post_init(self):
+        print(f"[INFO]: Using Policy: {self.__class__.__name__}")
+        print(f"Actor: {self.actor}")
+        print(f"Critic: {self.critic}")
+        print(f"TCN Encoder: {self.encoder}")
+        print(f"MLP Encoder Critic: {self.encoder_critic}")
+        print(f"TransModel: {self.trans}")
+        print(f"[INFO]: Velocity Estimator: {self.vel_estimator}")
+
+    def encode(self, obs_tuple, **kwargs):
+        obs_hist, _, obs_hist_short = obs_tuple
+        # hist is shape: [B, num_hist, self.num_obs_h1]
+        # For Conv1D: [B, channels_in, seq_len] = [B, self.num_obs_h1, num_hist]
+        obs_hist = obs_hist.permute(0, 2, 1)  # => [B, self.num_obs_h1, num_hist]
+        z = self.encoder(obs_hist)
+        vel = self.vel_estimator(torch.cat([z, obs_hist_short.view(*obs_hist_short.shape[:-2], -1)], dim=-1))
+        return z, vel
+
+# -----------------------------------------------------------------------------
+# ------------------------------ Fine Tuning ---------------------------------
+# -----------------------------------------------------------------------------
 
 
 class ActorCriticTarFt(ActorCriticTar):

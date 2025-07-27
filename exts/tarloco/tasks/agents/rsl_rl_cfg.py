@@ -26,7 +26,7 @@ class Go1RoughPpoRunnerCfg(RslRlOnPolicyRunnerCfg):
     save_interval = 100
     experiment_name = "TAR_workspace"
     empirical_normalization = True
-    policy = RslRlPpoActorCriticCfg(  # teacher policy if distil is used
+    policy = RslRlPpoPolicyCfg(
         class_name="ActorCriticMlp",
         init_noise_std=1.0,
         clip_action=100.0,
@@ -56,7 +56,7 @@ class Go1RoughPpoRunnerCfg(RslRlOnPolicyRunnerCfg):
 
 @configclass
 class Go1RoughPpoExpertRunnerCfg(Go1RoughPpoRunnerCfg):
-    policy = RslRlPpoSlrActorCriticCfg(
+    policy = RslRlPpoSlrPolicyCfg(
         class_name="ActorCriticMlpDblEncExpert",
         num_hist=1,
         latent_dims=20,
@@ -99,7 +99,7 @@ class Go1RoughRnnRunnerCfg(RslRlOnPolicyRunnerCfg):
     save_interval = 100  # Checkpointing interval
     experiment_name = "TAR_workspace"
     empirical_normalization = True
-    policy = RslRlRnnPpoActorCriticCfg(
+    policy = RslRlRnnPpoPolicyCfg(
         class_name="ActorCriticRnnDblEnc",
         init_noise_std=1.0,
         clip_action=100.0,
@@ -139,9 +139,10 @@ class Go1RoughRnnRunnerCfg(RslRlOnPolicyRunnerCfg):
 
 @configclass
 class Go1RoughPpoTarRunnerCfg(Go1RoughPpoRunnerCfg):
-    policy = RslRlPpoSlrActorCriticCfg(
+    policy = RslRlPpoTarPolicyCfg(
         class_name="ActorCriticTar",
-        num_hist=5,
+        num_hist=10,
+        num_hist_short=4,
         latent_dims=45,
         init_noise_std=1.0,
         clip_action=100.0,
@@ -174,10 +175,11 @@ class Go1RoughPpoTarRunnerCfg(Go1RoughPpoRunnerCfg):
 
 @configclass
 class Go1RoughRnnTarRunnerCfg(Go1RoughRnnRunnerCfg):
-    policy = RslRlRnnPpoTarActorCriticCfg(
+    policy = RslRlRnnTarPolicyCfg(
         class_name="ActorCriticTarRnn",
         init_noise_std=1.0,
         num_hist=5,
+        num_hist_short=4,
         latent_dims=45,
         clip_action=100.0,
         squash_mode="clip",
@@ -212,6 +214,41 @@ class Go1RoughRnnTarRunnerCfg(Go1RoughRnnRunnerCfg):
     )
 
 
+@configclass
+class Go1RoughTcnTarRunnerCfg(Go1RoughPpoTarRunnerCfg):
+    policy = RslRlPpoTarPolicyCfg(
+        class_name="ActorCriticTarTcn",
+        num_hist=50,
+        num_hist_short=4,
+        latent_dims=45,
+        init_noise_std=1.0,
+        clip_action=100.0,
+        squash_mode="clip",
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        mlp_encoder_dims=[256, 128, 64],
+        activation="elu",
+        trans_hidden_dims=[64],
+    )
+    algorithm = RslRlPpoTarAlgorithmCfg(
+        class_name="PPOTAR",
+        value_loss_coef=1.0,
+        use_clipped_value_loss=True,
+        clip_param=0.2,
+        entropy_coef=0.01,
+        num_learning_epochs=5,
+        num_mini_batches=4,
+        lr_max=1.0e-3,
+        lr_min=5.0e-5,
+        schedule="adaptive",
+        gamma=0.99,
+        lam=0.95,
+        desired_kl=0.01,
+        max_grad_norm=1.0,
+        optimizer="Adam",
+        aux_loss_coef=[1.0],
+    )
+
 # =============================
 #         SLR POLICIES
 # =============================
@@ -219,7 +256,7 @@ class Go1RoughRnnTarRunnerCfg(Go1RoughRnnRunnerCfg):
 
 @configclass
 class Go1RoughPpoSlrRunnerCfg(Go1RoughPpoRunnerCfg):
-    policy = RslRlPpoSlrActorCriticCfg(
+    policy = RslRlPpoSlrPolicyCfg(
         class_name="ActorCriticMlpSlr",
         num_hist=10,
         latent_dims=20,
@@ -256,12 +293,7 @@ class Go1RoughPpoSlrRunnerCfg(Go1RoughPpoRunnerCfg):
 # =============================
 @configclass
 class Go1PpoHimRunnerCfg(Go1RoughPpoRunnerCfg):
-    num_steps_per_env = 24
-    max_iterations = 1500
-    save_interval = 100
-    experiment_name = "TAR_workspace"
-    empirical_normalization = True
-    policy = RslRlPpoActorCriticCfg(  # teacher policy if distil is used
+    policy = RslRlPpoPolicyCfg(  # teacher policy if distil is used
         class_name="ActorCriticHIM",
         init_noise_std=1.0,
         clip_action=100.0,
