@@ -7,10 +7,10 @@ from .ac_him import ActorCriticHIM
 from .ac_slr import ActorCriticMlpSlr, ActorCriticMlpSlrDblEnc, ActorCriticMlpDblEncExpert
 from .ac_tar import (
     ActorCriticTar,
-    ActorCriticTarFt,
     ActorCriticTarRnn,
-    ActorCriticTarRnnFt,
     ActorCriticTarTcn,
+    ActorCriticTarFt,
+    ActorCriticTarFtNoVel,
 )
 from .base.ac_base import ActorCriticMlp, ActorCriticRnn, ActorCriticRnnDblEnc
 from .utils import mlp_factory

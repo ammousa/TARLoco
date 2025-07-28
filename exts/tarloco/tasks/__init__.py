@@ -78,6 +78,16 @@ registry = {
         env_cfg_entry_point=envs.TarTcnGo1LocomotionVelocityRoughEnvCfg,
         rsl_rl_cfg_entry_point=agents.Go1RoughTcnTarRunnerCfg,
     ),
+    # TAR replacing RNN encoder with 10-steps MLP, without privileged information
+    "go1-train-tar-mlp-no-priv-rough": TaskConfig(
+        env_cfg_entry_point=envs.TarMlpNoPrivGo1LocomotionVelocityRoughEnvCfg,
+        rsl_rl_cfg_entry_point=agents.Go1RoughPpoTarNoPrivRunnerCfg,
+    ),
+    # TAR replacing RNN encoder with 10-steps MLP, without privileged information and velocity estimation
+    "go1-train-tar-mlp-no-priv-no-vel-rough": TaskConfig(
+        env_cfg_entry_point=envs.TarMlpNoPrivGo1LocomotionVelocityRoughEnvCfg,
+        rsl_rl_cfg_entry_point=agents.Go1RoughPpoTarNoPrivNoVelRunnerCfg,
+    ),
 }
 
 

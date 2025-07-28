@@ -33,7 +33,7 @@ class TarGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
         self.observations = FullObservationsCfg()
 
         # Policy
-        self.observations.policy.history_length = 5
+        self.observations.policy.history_length = 4
         self.observations.policy.flatten_history_dim = False
         del self.observations.policy.base_lin_vel
         del self.observations.policy.height_scan
@@ -67,6 +67,30 @@ class TarTcnGo1LocomotionVelocityRoughEnvCfg(TarGo1LocomotionVelocityRoughEnvCfg
         super().__post_init__()
         # Policy
         self.observations.policy.history_length = 50
+
+
+@configclass
+class TarMlpNoPrivGo1LocomotionVelocityRoughEnvCfg(TarMlpGo1LocomotionVelocityRoughEnvCfg):
+    """Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        """Override attributes after initialization."""
+        super().__post_init__()
+        # Policy
+        self.observations.policy.history_length = 10
+        self.observations.policy.flatten_history_dim = False
+
+        # Critic
+        self.observations.critic.history_length = 10
+        self.observations.critic.flatten_history_dim = False
+        del self.observations.critic.height_scan
+        del self.observations.critic.base_external_force
+        del self.observations.critic.feet_contact_z
+        del self.observations.critic.contact_friction
+        del self.observations.critic.base_mass
+
+        # Disable height scanner
+        del self.scene.height_scanner
 
 
 @configclass

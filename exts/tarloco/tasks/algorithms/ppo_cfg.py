@@ -233,9 +233,6 @@ class RslRlPpoTarPolicyCfg(RslRlPpoSlrPolicyCfg):
 class RslRlRnnTarPolicyCfg(RslRlRnnPpoPolicyCfg, RslRlPpoTarPolicyCfg):
     """Configuration for the RNN-PPO actor-critic networks."""
 
-    num_hist: int = 1
-    """The number of history steps to consider."""
-
     latent_dims: int = MISSING
     """The latent dimensions for the actor-critic networks."""
 

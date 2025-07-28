@@ -192,7 +192,6 @@ class ActorCriticTarRnn(ActorCriticTar, ActorCriticRnn):
             clip_action=clip_action,
             squash_mode=squash_mode,
             trans_hidden_dims=trans_hidden_dims,
-            **kwargs,
         )
 
         self.encoder = Memory(
@@ -377,71 +376,17 @@ class ActorCriticTarFt(ActorCriticTar):
         num_critic_obs: int,
         num_actions: int,
         num_hist: int,
-        latent_dims: int = 20,
-        actor_hidden_dims: list[int] = [256, 128, 128],
-        critic_hidden_dims: list[int] = [512, 256, 256],
-        mlp_encoder_dims: list[int] = [256, 128, 64],
-        activation: str = "elu",
-        init_noise_std: float = 1.0,
-        clip_action: float = 100.0,
-        squash_mode: str = "clip",  # 'tanh' or 'clip'
-        trans_hidden_dims: list[int] = [32],
-        **kwargs,
-    ):
-        super().__init__(
-            num_actor_obs,
-            num_critic_obs,
-            num_actions,
-            num_hist,
-            latent_dims,
-            actor_hidden_dims,
-            critic_hidden_dims,
-            mlp_encoder_dims,
-            activation,
-            init_noise_std,
-            clip_action,
-            squash_mode,
-            trans_hidden_dims,
-            **kwargs,
-        )
-
-    def post_init(self):
-        print(f"[INFO]: Using Policy: {self.__class__.__name__}")
-        print(f"Actor: {self.actor}")
-        print(f"Critic: {self.critic}")
-        print(f"MLP Encoder: {self.encoder}")
-        print(f"Excluding Critic Encoder: {self.encoder_critic}")
-        print(f"TransModel: {self.trans}")
-
-    def extract_critic(self, observations):
-        return self.extract(observations)
-
-    def encode_critic(self, obs_tuple, **kwargs):
-        return self.encode(obs_tuple)
-
-
-class ActorCriticTarRnnFt(ActorCriticTarRnn):
-    is_recurrent = True
-
-    def __init__(
-        self,
-        num_actor_obs: int,
-        num_critic_obs: int,
-        num_actions: int,
-        num_hist: int,
         num_hist_short: int = 4,
         latent_dims: int = 20,
         actor_hidden_dims: list[int] = [256, 128, 128],
         critic_hidden_dims: list[int] = [512, 256, 256],
+        mlp_encoder_dims: list[int] = [256, 128, 64],
         vel_encoder_dims: list[int] = [64, 32],
         activation: str = "elu",
         init_noise_std: float = 1.0,
         clip_action: float = 100.0,
         squash_mode: str = "clip",  # 'tanh' or 'clip'
         trans_hidden_dims: list[int] = [32],
-        # RNN
-        rnn_encoder_dims: list[int] = [256, 256],
-        rnn_type: str = "lstm",
         **kwargs,
     ):
         super().__init__(
@@ -453,25 +398,84 @@ class ActorCriticTarRnnFt(ActorCriticTarRnn):
             latent_dims=latent_dims,
             actor_hidden_dims=actor_hidden_dims,
             critic_hidden_dims=critic_hidden_dims,
+            mlp_encoder_dims=mlp_encoder_dims,
             vel_encoder_dims=vel_encoder_dims,
             activation=activation,
             init_noise_std=init_noise_std,
             clip_action=clip_action,
             squash_mode=squash_mode,
             trans_hidden_dims=trans_hidden_dims,
-            rnn_encoder_dims=rnn_encoder_dims,
-            rnn_type=rnn_type,
             **kwargs,
         )
+
+    def post_init(self):
+        print(f"[INFO]: Using Policy: {self.__class__.__name__}")
+        print(f"Actor: {self.actor}")
+        print(f"Critic: {self.critic}")
+        print(f"MLP Encoder: {self.encoder}")
+        print(f"Excluding Critic Encoder: {self.encoder_critic}")
+        print(f"Velocity Estimator: {self.vel_estimator}")
+        print(f"TransModel: {self.trans}")
 
     def extract_critic(self, observations):
         if observations.dim() == 2:
             observations = observations.unsqueeze(0)
-        prop = observations[..., -1, 3:48]
-        hist_short = observations[..., -self.num_hist_short :, 3:48]
-        hist = observations[..., 3:48]
-        return hist, prop, hist_short
+        prop = observations[:, -1, 3:48]  # [Batch, Time, Dim]
+        vel = observations[:, -1, 0:3]
+        full_obs = observations
+        return full_obs, prop, vel
 
     def encode_critic(self, obs_tuple, **kwargs):
-        z, _, vel = self.encode(obs_tuple, **kwargs)
+        obs_hist = obs_tuple[0]
+        prop_hist = obs_hist[..., 3:]
+        z = self.encoder(prop_hist.reshape(*prop_hist.shape[:-2], -1))
+        vel = obs_hist[..., -1, 0:3]
         return z, vel
+
+
+class ActorCriticTarFtNoVel(ActorCriticTarFt):
+    def __init__(
+        self,
+        num_actor_obs: int,
+        num_critic_obs: int,
+        num_actions: int,
+        num_hist: int,
+        num_hist_short: int = 4,
+        latent_dims: int = 20,
+        actor_hidden_dims: list[int] = [256, 128, 128],
+        critic_hidden_dims: list[int] = [512, 256, 256],
+        mlp_encoder_dims: list[int] = [256, 128, 64],
+        vel_encoder_dims: list[int] = [64, 32],
+        activation: str = "elu",
+        init_noise_std: float = 1.0,
+        clip_action: float = 100.0,
+        squash_mode: str = "clip",  # 'tanh' or 'clip'
+        trans_hidden_dims: list[int] = [32],
+        **kwargs,
+    ):
+        super().__init__(
+            num_actor_obs=num_actor_obs,
+            num_critic_obs=num_critic_obs,
+            num_actions=num_actions,
+            num_hist=num_hist,
+            num_hist_short=num_hist_short,
+            latent_dims=latent_dims,
+            actor_hidden_dims=actor_hidden_dims,
+            critic_hidden_dims=critic_hidden_dims,
+            mlp_encoder_dims=mlp_encoder_dims,
+            vel_encoder_dims=vel_encoder_dims,
+            activation=activation,
+            init_noise_std=init_noise_std,
+            clip_action=clip_action,
+            squash_mode=squash_mode,
+            trans_hidden_dims=trans_hidden_dims,
+            **kwargs,
+        )
+
+    def encode(self, obs_tuple, **kwargs):
+        z, vel = super().encode(obs_tuple, **kwargs)
+        return z, vel * 0.0
+
+    def extract_critic(self, observations):
+        full_obs, prop, vel = super().extract_critic(observations)
+        return full_obs, prop, vel * 0.0

@@ -136,7 +136,7 @@ class Go1RoughRnnRunnerCfg(RslRlOnPolicyRunnerCfg):
 #         TAR POLICIES
 # =============================
 
-
+# MLP Policy
 @configclass
 class Go1RoughPpoTarRunnerCfg(Go1RoughPpoRunnerCfg):
     policy = RslRlPpoTarPolicyCfg(
@@ -173,12 +173,12 @@ class Go1RoughPpoTarRunnerCfg(Go1RoughPpoRunnerCfg):
     )
 
 
+# RNN Policy
 @configclass
 class Go1RoughRnnTarRunnerCfg(Go1RoughRnnRunnerCfg):
     policy = RslRlRnnTarPolicyCfg(
         class_name="ActorCriticTarRnn",
         init_noise_std=1.0,
-        num_hist=5,
         num_hist_short=4,
         latent_dims=45,
         clip_action=100.0,
@@ -214,6 +214,7 @@ class Go1RoughRnnTarRunnerCfg(Go1RoughRnnRunnerCfg):
     )
 
 
+# TCN Policy
 @configclass
 class Go1RoughTcnTarRunnerCfg(Go1RoughPpoTarRunnerCfg):
     policy = RslRlPpoTarPolicyCfg(
@@ -248,6 +249,81 @@ class Go1RoughTcnTarRunnerCfg(Go1RoughPpoTarRunnerCfg):
         optimizer="Adam",
         aux_loss_coef=[1.0],
     )
+
+
+# No priv MLP Policy
+@configclass
+class Go1RoughPpoTarNoPrivRunnerCfg(Go1RoughPpoRunnerCfg):
+    policy = RslRlPpoTarPolicyCfg(
+        class_name="ActorCriticTarFt",
+        num_hist=10,
+        num_hist_short=4,
+        latent_dims=45,
+        init_noise_std=1.0,
+        clip_action=100.0,
+        squash_mode="clip",
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        mlp_encoder_dims=[256, 128, 64],
+        activation="elu",
+        trans_hidden_dims=[64],
+    )
+    algorithm = RslRlPpoTarAlgorithmCfg(
+        class_name="PPOTAR",
+        value_loss_coef=1.0,
+        use_clipped_value_loss=True,
+        clip_param=0.2,
+        entropy_coef=0.01,
+        num_learning_epochs=5,
+        num_mini_batches=4,
+        lr_max=1.0e-3,
+        lr_min=5.0e-5,
+        schedule="adaptive",
+        gamma=0.99,
+        lam=0.95,
+        desired_kl=0.01,
+        max_grad_norm=1.0,
+        optimizer="Adam",
+        aux_loss_coef=[1.0],
+    )
+
+
+# No priv MLP Policy
+@configclass
+class Go1RoughPpoTarNoPrivNoVelRunnerCfg(Go1RoughPpoRunnerCfg):
+    policy = RslRlPpoTarPolicyCfg(
+        class_name="ActorCriticTarFtNoVel",
+        num_hist=10,
+        num_hist_short=4,
+        latent_dims=45,
+        init_noise_std=1.0,
+        clip_action=100.0,
+        squash_mode="clip",
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        mlp_encoder_dims=[256, 128, 64],
+        activation="elu",
+        trans_hidden_dims=[64],
+    )
+    algorithm = RslRlPpoTarAlgorithmCfg(
+        class_name="PPOTAR",
+        value_loss_coef=1.0,
+        use_clipped_value_loss=True,
+        clip_param=0.2,
+        entropy_coef=0.01,
+        num_learning_epochs=5,
+        num_mini_batches=4,
+        lr_max=1.0e-3,
+        lr_min=5.0e-5,
+        schedule="adaptive",
+        gamma=0.99,
+        lam=0.95,
+        desired_kl=0.01,
+        max_grad_norm=1.0,
+        optimizer="Adam",
+        aux_loss_coef=[1.0],
+    )
+
 
 # =============================
 #         SLR POLICIES
