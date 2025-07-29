@@ -123,7 +123,8 @@ class PPOTAR(PPO):
         neg_loss = torch.max(zeros, 1.0 - neg_loss).mean()
         triplet_loss = pos_loss + neg_loss
         # MSE between vel and vel_estimated
-        vel_loss = F.mse_loss(vel_c.squeeze(-2), vel_estimated)
+        no_vel_training = vel_c.shape != vel_estimated.shape  # case of no vel rnn ablation study
+        vel_loss = torch.tensor(0.0, device=vel_c.device) if no_vel_training else F.mse_loss(vel_c.squeeze(-2), vel_estimated)
 
         return {
             "tar": triplet_loss * self.aux_loss_coef[0],

@@ -286,7 +286,7 @@ class ActorCriticTarRnn(ActorCriticTar, ActorCriticRnn):
         z, vel = self.encode_critic(obs_tuple, **kwargs)
         if masks is not None:
             prop = unpad_trajectories(prop, masks)
-            vel = unpad_trajectories(vel, masks) if vel.shape[0] != masks.shape[0] else vel
+            vel = unpad_trajectories(vel, masks) if vel.shape[:-1] != prop.shape[:-1] else vel
         critic_obs = torch.cat([z, prop.squeeze(), vel.squeeze()], dim=-1)
         value = self.critic(critic_obs)
         return value, hidden_states  # for hidden states
