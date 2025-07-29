@@ -368,6 +368,8 @@ class ActorCriticTarTcn(ActorCriticTar):
 # ------------------------------ Fine Tuning ---------------------------------
 # -----------------------------------------------------------------------------
 
+# MLP without privleged information
+
 
 class ActorCriticTarFt(ActorCriticTar):
     def __init__(
@@ -420,8 +422,8 @@ class ActorCriticTarFt(ActorCriticTar):
     def extract_critic(self, observations):
         if observations.dim() == 2:
             observations = observations.unsqueeze(0)
-        prop = observations[:, -1, 3:48]  # [Batch, Time, Dim]
-        vel = observations[:, -1, 0:3]
+        prop = observations[..., -1, 3:48]  # [Batch, Time, Dim]
+        vel = observations[..., -1, 0:3]
         full_obs = observations
         return full_obs, prop, vel
 
@@ -433,6 +435,7 @@ class ActorCriticTarFt(ActorCriticTar):
         return z, vel
 
 
+# MLP without privleged information and velocity estimation
 class ActorCriticTarFtNoVel(ActorCriticTarFt):
     def __init__(
         self,
@@ -475,6 +478,122 @@ class ActorCriticTarFtNoVel(ActorCriticTarFt):
     def encode(self, obs_tuple, **kwargs):
         z, vel = super().encode(obs_tuple, **kwargs)
         return z, vel * 0.0
+
+    def extract_critic(self, observations):
+        full_obs, prop, vel = super().extract_critic(observations)
+        return full_obs, prop, vel * 0.0
+
+# RNN without privleged information
+
+
+class ActorCriticTarRnnFt(ActorCriticTarRnn):
+    def __init__(
+        self,
+        num_actor_obs: int,
+        num_critic_obs: int,
+        num_actions: int,
+        num_hist_short: int = 4,
+        latent_dims: int = 20,
+        actor_hidden_dims: list[int] = [256, 128, 128],
+        critic_hidden_dims: list[int] = [512, 256, 256],
+        vel_encoder_dims: list[int] = [64, 32],
+        activation: str = "elu",
+        init_noise_std: float = 1.0,
+        clip_action: float = 100.0,
+        squash_mode: str = "clip",  # 'tanh' or 'clip'
+        trans_hidden_dims: list[int] = [32],
+        # RNN
+        rnn_hidden_dims: list[int] = [256, 256],
+        rnn_type: str = "lstm",
+        **kwargs,
+    ):
+        super().__init__(
+            num_actor_obs=num_actor_obs,
+            num_critic_obs=num_critic_obs,
+            num_actions=num_actions,
+            num_hist_short=num_hist_short,
+            latent_dims=latent_dims,
+            actor_hidden_dims=actor_hidden_dims,
+            critic_hidden_dims=critic_hidden_dims,
+            vel_encoder_dims=vel_encoder_dims,
+            activation=activation,
+            init_noise_std=init_noise_std,
+            clip_action=clip_action,
+            squash_mode=squash_mode,
+            trans_hidden_dims=trans_hidden_dims,
+            rnn_hidden_dims=rnn_hidden_dims,
+            rnn_type=rnn_type,
+            **kwargs,
+        )
+
+    def post_init(self):
+        print(f"[INFO]: Using Policy: {self.__class__.__name__}")
+        print(f"Actor: {self.actor}")
+        print(f"Critic: {self.critic}")
+        print(f"RNN Encoder: {self.encoder}")
+        print(f"Excluding Critic Encoder: {self.encoder_critic}")
+        print(f"TransModel: {self.trans}")
+        print(f"Velocity Estimator: {self.vel_estimator}")
+
+    def extract_critic(self, observations):
+        if observations.dim() == 2:
+            observations = observations.unsqueeze(0)
+        prop = observations[..., -1, 3:48]  # [Batch, Time, Dim]
+        vel = observations[..., -1, 0:3]
+        full_obs = observations
+        return full_obs, prop, vel
+
+    def encode_critic(self, obs_tuple, **kwargs):
+        obs_hist, _, vel = obs_tuple
+        obs_tuple = (obs_tuple[0], obs_tuple[1], obs_hist[..., -self.num_hist_short :, 3:48])
+        z, _, _ = self.encode(obs_tuple, **kwargs)
+        return z, vel
+
+
+# RNN without privleged information and velocity estimation
+class ActorCriticTarRnnFtNoVel(ActorCriticTarRnnFt):
+    def __init__(
+        self,
+        num_actor_obs: int,
+        num_critic_obs: int,
+        num_actions: int,
+        num_hist_short: int = 4,
+        latent_dims: int = 20,
+        actor_hidden_dims: list[int] = [256, 128, 128],
+        critic_hidden_dims: list[int] = [512, 256, 256],
+        vel_encoder_dims: list[int] = [64, 32],
+        activation: str = "elu",
+        init_noise_std: float = 1.0,
+        clip_action: float = 100.0,
+        squash_mode: str = "clip",  # 'tanh' or 'clip'
+        trans_hidden_dims: list[int] = [32],
+        # RNN
+        rnn_hidden_dims: list[int] = [256, 256],
+        rnn_type: str = "lstm",
+        **kwargs,
+    ):
+        super().__init__(
+            num_actor_obs=num_actor_obs,
+            num_critic_obs=num_critic_obs,
+            num_actions=num_actions,
+            num_hist_short=num_hist_short,
+            latent_dims=latent_dims,
+            actor_hidden_dims=actor_hidden_dims,
+            critic_hidden_dims=critic_hidden_dims,
+            vel_encoder_dims=vel_encoder_dims,
+            activation=activation,
+            init_noise_std=init_noise_std,
+            clip_action=clip_action,
+            squash_mode=squash_mode,
+            trans_hidden_dims=trans_hidden_dims,
+            rnn_hidden_dims=rnn_hidden_dims,
+            rnn_type=rnn_type,
+            **kwargs,
+        )
+
+    def encode(self, obs_tuple, **kwargs):
+        z, hidden_states, vel = super().encode(obs_tuple, **kwargs)
+        return z, hidden_states, vel * 0.0
 
     def extract_critic(self, observations):
         full_obs, prop, vel = super().extract_critic(observations)

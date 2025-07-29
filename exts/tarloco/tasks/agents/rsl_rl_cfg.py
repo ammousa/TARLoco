@@ -18,6 +18,24 @@ from exts.tarloco.tasks.algorithms import *
 #         MLP POLICIES
 # =============================
 
+ppo_algo_cfg = RslRlPpoAlgorithmCfg(
+    class_name="PPO",
+    value_loss_coef=1.0,
+    use_clipped_value_loss=True,
+    clip_param=0.2,
+    entropy_coef=0.01,
+    num_learning_epochs=5,
+    num_mini_batches=4,
+    lr_max=1.0e-3,
+    lr_min=1.0e-5,
+    schedule="adaptive",
+    gamma=0.99,
+    lam=0.95,
+    desired_kl=0.01,
+    max_grad_norm=1.0,
+    optimizer="Adam",
+)
+
 
 @configclass
 class Go1RoughPpoRunnerCfg(RslRlOnPolicyRunnerCfg):
@@ -35,23 +53,7 @@ class Go1RoughPpoRunnerCfg(RslRlOnPolicyRunnerCfg):
         critic_hidden_dims=[512, 256, 128],
         activation="elu",
     )
-    algorithm = RslRlPpoAlgorithmCfg(
-        class_name="PPO",
-        value_loss_coef=1.0,
-        use_clipped_value_loss=True,
-        clip_param=0.2,
-        entropy_coef=0.01,
-        num_learning_epochs=5,
-        num_mini_batches=4,
-        lr_max=1.0e-3,
-        lr_min=1.0e-5,
-        schedule="adaptive",
-        gamma=0.99,
-        lam=0.95,
-        desired_kl=0.01,
-        max_grad_norm=1.0,
-        optimizer="Adam",
-    )
+    algorithm = ppo_algo_cfg
 
 
 @configclass
@@ -69,23 +71,7 @@ class Go1RoughPpoExpertRunnerCfg(Go1RoughPpoRunnerCfg):
         activation="elu",
         trans_hidden_dims=[256, 128],  # not used in this policy, but required for the config to be valid
     )
-    algorithm = RslRlPpoAlgorithmCfg(
-        class_name="PPO",
-        value_loss_coef=1.0,
-        use_clipped_value_loss=True,
-        clip_param=0.2,
-        entropy_coef=0.01,
-        num_learning_epochs=5,
-        num_mini_batches=4,
-        lr_max=1.0e-3,
-        lr_min=1.0e-5,
-        schedule="adaptive",
-        gamma=0.99,
-        lam=0.95,
-        desired_kl=0.01,
-        max_grad_norm=1.0,
-        optimizer="Adam",
-    )
+    algorithm = ppo_algo_cfg
 
 # =============================
 #         RNN POLICIES
@@ -113,28 +99,32 @@ class Go1RoughRnnRunnerCfg(RslRlOnPolicyRunnerCfg):
         rnn_hidden_dims=[512],
         rnn_out_features=20,  # latent_dims of augmented lstm
     )
-    algorithm = RslRlPpoAlgorithmCfg(
-        class_name="PPO",
-        value_loss_coef=1.0,
-        use_clipped_value_loss=True,
-        clip_param=0.2,
-        entropy_coef=0.01,
-        num_learning_epochs=5,
-        num_mini_batches=4,
-        lr_max=1.0e-3,
-        lr_min=1.0e-5,
-        schedule="adaptive",
-        gamma=0.99,
-        lam=0.95,
-        desired_kl=0.01,
-        max_grad_norm=1.0,
-        optimizer="Adam",
-    )
+    algorithm = ppo_algo_cfg
 
 
 # =============================
 #         TAR POLICIES
 # =============================
+
+tar_algo_cfg = RslRlPpoTarAlgorithmCfg(
+    class_name="PPOTAR",
+    value_loss_coef=1.0,
+    use_clipped_value_loss=True,
+    clip_param=0.2,
+    entropy_coef=0.01,
+    num_learning_epochs=5,
+    num_mini_batches=4,
+    lr_max=1.0e-3,
+    lr_min=5.0e-5,
+    schedule="adaptive",
+    gamma=0.99,
+    lam=0.95,
+    desired_kl=0.01,
+    max_grad_norm=1.0,
+    optimizer="Adam",
+    aux_loss_coef=[1.0],
+)
+
 
 # MLP Policy
 @configclass
@@ -153,24 +143,7 @@ class Go1RoughPpoTarRunnerCfg(Go1RoughPpoRunnerCfg):
         activation="elu",
         trans_hidden_dims=[64],
     )
-    algorithm = RslRlPpoTarAlgorithmCfg(
-        class_name="PPOTAR",
-        value_loss_coef=1.0,
-        use_clipped_value_loss=True,
-        clip_param=0.2,
-        entropy_coef=0.01,
-        num_learning_epochs=5,
-        num_mini_batches=4,
-        lr_max=1.0e-3,
-        lr_min=5.0e-5,
-        schedule="adaptive",
-        gamma=0.99,
-        lam=0.95,
-        desired_kl=0.01,
-        max_grad_norm=1.0,
-        optimizer="Adam",
-        aux_loss_coef=[1.0],
-    )
+    algorithm = tar_algo_cfg
 
 
 # RNN Policy
@@ -194,24 +167,7 @@ class Go1RoughRnnTarRunnerCfg(Go1RoughRnnRunnerCfg):
         # tar settings
         trans_hidden_dims=[64],
     )
-    algorithm = RslRlPpoTarAlgorithmCfg(
-        class_name="PPOTAR",
-        value_loss_coef=1.0,
-        use_clipped_value_loss=True,
-        clip_param=0.2,
-        entropy_coef=0.01,
-        num_learning_epochs=5,
-        num_mini_batches=4,
-        lr_max=1.0e-3,
-        lr_min=5.0e-5,
-        schedule="adaptive",
-        gamma=0.99,
-        lam=0.95,
-        desired_kl=0.01,
-        max_grad_norm=1.0,
-        optimizer="Adam",
-        aux_loss_coef=[1.0],
-    )
+    algorithm = tar_algo_cfg
 
 
 # TCN Policy
@@ -231,24 +187,56 @@ class Go1RoughTcnTarRunnerCfg(Go1RoughPpoTarRunnerCfg):
         activation="elu",
         trans_hidden_dims=[64],
     )
-    algorithm = RslRlPpoTarAlgorithmCfg(
-        class_name="PPOTAR",
-        value_loss_coef=1.0,
-        use_clipped_value_loss=True,
-        clip_param=0.2,
-        entropy_coef=0.01,
-        num_learning_epochs=5,
-        num_mini_batches=4,
-        lr_max=1.0e-3,
-        lr_min=5.0e-5,
-        schedule="adaptive",
-        gamma=0.99,
-        lam=0.95,
-        desired_kl=0.01,
-        max_grad_norm=1.0,
-        optimizer="Adam",
-        aux_loss_coef=[1.0],
+    algorithm = tar_algo_cfg
+
+
+# No priv Rnn Policy
+@configclass
+class Go1RoughRnnTarNoPrivRunnerCfg(Go1RoughPpoRunnerCfg):
+    policy = RslRlRnnTarPolicyCfg(
+        class_name="ActorCriticTarRnnFt",
+        init_noise_std=1.0,
+        num_hist_short=4,
+        latent_dims=45,
+        clip_action=100.0,
+        squash_mode="clip",
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+        # RNN specific
+        arch_type="integrated",
+        rnn_type="lstm",
+        rnn_hidden_dims=[256],
+        rnn_out_features=0,  # latent_dims of augmented lstm only, default is 0
+        # tar settings
+        trans_hidden_dims=[64],
     )
+    algorithm = tar_algo_cfg
+
+# No priv No Vel Rnn Policy
+
+
+@configclass
+class Go1RoughRnnTarNoPrivNoVelRunnerCfg(Go1RoughPpoRunnerCfg):
+    policy = RslRlRnnTarPolicyCfg(
+        class_name="ActorCriticTarRnnFtNoVel",
+        init_noise_std=1.0,
+        num_hist_short=4,
+        latent_dims=45,
+        clip_action=100.0,
+        squash_mode="clip",
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+        # RNN specific
+        arch_type="integrated",
+        rnn_type="lstm",
+        rnn_hidden_dims=[256],
+        rnn_out_features=0,  # latent_dims of augmented lstm only, default is 0
+        # tar settings
+        trans_hidden_dims=[64],
+    )
+    algorithm = tar_algo_cfg
 
 
 # No priv MLP Policy
@@ -268,27 +256,10 @@ class Go1RoughPpoTarNoPrivRunnerCfg(Go1RoughPpoRunnerCfg):
         activation="elu",
         trans_hidden_dims=[64],
     )
-    algorithm = RslRlPpoTarAlgorithmCfg(
-        class_name="PPOTAR",
-        value_loss_coef=1.0,
-        use_clipped_value_loss=True,
-        clip_param=0.2,
-        entropy_coef=0.01,
-        num_learning_epochs=5,
-        num_mini_batches=4,
-        lr_max=1.0e-3,
-        lr_min=5.0e-5,
-        schedule="adaptive",
-        gamma=0.99,
-        lam=0.95,
-        desired_kl=0.01,
-        max_grad_norm=1.0,
-        optimizer="Adam",
-        aux_loss_coef=[1.0],
-    )
+    algorithm = tar_algo_cfg
 
 
-# No priv MLP Policy
+# No priv No Vel MLP Policy
 @configclass
 class Go1RoughPpoTarNoPrivNoVelRunnerCfg(Go1RoughPpoRunnerCfg):
     policy = RslRlPpoTarPolicyCfg(
@@ -305,24 +276,7 @@ class Go1RoughPpoTarNoPrivNoVelRunnerCfg(Go1RoughPpoRunnerCfg):
         activation="elu",
         trans_hidden_dims=[64],
     )
-    algorithm = RslRlPpoTarAlgorithmCfg(
-        class_name="PPOTAR",
-        value_loss_coef=1.0,
-        use_clipped_value_loss=True,
-        clip_param=0.2,
-        entropy_coef=0.01,
-        num_learning_epochs=5,
-        num_mini_batches=4,
-        lr_max=1.0e-3,
-        lr_min=5.0e-5,
-        schedule="adaptive",
-        gamma=0.99,
-        lam=0.95,
-        desired_kl=0.01,
-        max_grad_norm=1.0,
-        optimizer="Adam",
-        aux_loss_coef=[1.0],
-    )
+    algorithm = tar_algo_cfg
 
 
 # =============================

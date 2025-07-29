@@ -11,6 +11,8 @@ from .ac_tar import (
     ActorCriticTarTcn,
     ActorCriticTarFt,
     ActorCriticTarFtNoVel,
+    ActorCriticTarRnnFt,
+    ActorCriticTarRnnFtNoVel,
 )
 from .base.ac_base import ActorCriticMlp, ActorCriticRnn, ActorCriticRnnDblEnc
 from .utils import mlp_factory

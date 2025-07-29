@@ -94,6 +94,17 @@ class TarMlpNoPrivGo1LocomotionVelocityRoughEnvCfg(TarMlpGo1LocomotionVelocityRo
 
 
 @configclass
+class TarRnnNoPrivGo1LocomotionVelocityRoughEnvCfg(TarMlpNoPrivGo1LocomotionVelocityRoughEnvCfg):
+    """Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        """Override attributes after initialization."""
+        super().__post_init__()
+        self.observations.policy.history_length = 4
+        self.observations.critic.history_length = 4
+
+
+@configclass
 class SlrGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
     """Configuration for Rough terrain."""
 

@@ -87,8 +87,16 @@ class PPOTAR(PPO):
         # Encode Critic Encoder with current obs and next obs
         obs_tuple_c = self.actor_critic.extract_critic(batch["critic_obs"])
         next_obs_tuple_c = self.actor_critic.extract_critic(batch["next_critic_obs"])
-        encode_c = self.actor_critic.encode_critic(obs_tuple_c, masks=batch.get("masks", None))
-        next_encode_c = self.actor_critic.encode_critic(next_obs_tuple_c, masks=batch.get("masks", None))
+        encode_c = self.actor_critic.encode_critic(
+            obs_tuple_c,
+            hidden_states=(batch.get("hid_states") or [None])[0],
+            masks=batch.get("masks", None)
+        )
+        next_encode_c = self.actor_critic.encode_critic(
+            next_obs_tuple_c,
+            hidden_states=(batch.get("next_hid_states") or [None])[0],
+            masks=batch.get("masks", None)
+        )
         next_z_c, vel_c = next_encode_c[0], encode_c[-1]
 
         # Generate next_neg_indices ensuring no multiples of number of environments
