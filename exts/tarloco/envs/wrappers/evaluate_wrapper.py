@@ -50,14 +50,9 @@ class EvaluateWrapper(gym.Wrapper):
                 "external_force_trunk": torch.zeros((3), device="cuda"),
                 "terrain_levels": 0,
             },
-            "metrics": {
-                "calc_lin_vel_error": 0,
-                "calc_ang_vel_error": 0,
-                "failures": 0,
-                "time_out": 0,
-            },
+            "metrics": {},
+            "cma_metrics_data": {},
             "sim_time": 0,
-            # position of robot identified by robot_idx
             "robot_position": torch.zeros((3), device="cuda"),
         }
 
@@ -98,15 +93,20 @@ class EvaluateWrapper(gym.Wrapper):
             # terrain_levels = env.unwrapped.scene["terrain"].terrain_levels
 
         """
-        lin_err, ang_err = self._calc_tracking_err(obs)
+        mean_lin_err, mean_ang_err = self._calc_mean_tracking_err(obs)
 
-        # update metrics
-        self.log["metrics"]["calc_lin_vel_error"] += lin_err
-        self.log["metrics"]["calc_ang_vel_error"] += ang_err
-        self.log["metrics"]["failures"] += terminated.sum().item()
-        self.log["metrics"]["time_out"] += truncated.sum().item()
+        # Update running averages for metrics per step
+        mean_lin_err = self._update_running_avg("lin_vel_error", mean_lin_err.item())
+        mean_ang_err = self._update_running_avg("ang_vel_error", mean_ang_err.item())
+        self.log["metrics"]["lin_vel_error"] = mean_lin_err
+        self.log["metrics"]["ang_vel_error"] = mean_ang_err
+        # Update running averages for metrics per min
+        mean_failures_per_sec = self._update_running_avg("failures", terminated.sum().item() / self.num_envs) / self.dt
+        mean_time_out_per_sec = self._update_running_avg("time_out", truncated.sum().item() / self.num_envs) / self.dt
+        self.log["metrics"]["failures"] = mean_failures_per_sec * 60
+        self.log["metrics"]["time_out"] = mean_time_out_per_sec * 60
 
-        # Extract relevant signals data
+        # Extract additional simulation data
         sim_time = self.env.unwrapped.scene["robot"].data._sim_timestamp
         robot_position = self.env.unwrapped.scene["robot"].data.body_pos_w[self.robot_idx, 1, :]
         contact_forces_z = self.env.unwrapped.scene["contact_forces"].data.net_forces_w[
@@ -122,52 +122,54 @@ class EvaluateWrapper(gym.Wrapper):
         terrain_levels = terrain_levels_attr[self.robot_idx] if terrain_levels_attr is not None else None
 
         # Update log signals for robot_index
-        self.log["signals"]["contact_forces_z"] = contact_forces_z
-        self.log["signals"]["base_vel_x_y_yaw"] = torch.cat((base_vel_x_y, base_yaw.unsqueeze(0)), dim=0)
-        self.log["signals"]["commands_x_y_yaw"] = commands_x_y_yaw
-        self.log["signals"]["external_force_trunk"] = external_force_trunk
-        self.log["signals"]["terrain_levels"] = terrain_levels
+        self.log["signals"].update(
+            {
+                "contact_forces_z": contact_forces_z,
+                "base_vel_x_y_yaw": torch.cat((base_vel_x_y, base_yaw.unsqueeze(0)), dim=0),
+                "commands_x_y_yaw": commands_x_y_yaw,
+                "external_force_trunk": external_force_trunk,
+                "terrain_levels": terrain_levels,
+            }
+        )
         self.log["sim_time"] = sim_time
         self.log["robot_position"] = robot_position
 
-        # update evaluator specific variables
-        self.num_steps += 1
-
+        self.num_steps += 1  # Track step count
         return {**info, "updated_log": self.log}
 
-    def get_metrics(self):
-        """
-        Calculate and return the evaluation metrics.
+    def _update_running_avg(self, metric_name, new_value):
+        """Update cumulative moving average (CMA) per second"""
+        if metric_name not in self.log["cma_metrics_data"]:
+            self.log["cma_metrics_data"][metric_name] = {"sum": 0.0, "count": 0}
 
+        self.log["cma_metrics_data"][metric_name]["sum"] += new_value
+        self.log["cma_metrics_data"][metric_name]["count"] += 1
+        return self.log["cma_metrics_data"][metric_name]["sum"] / self.log["cma_metrics_data"][metric_name]["count"]
+
+    def _calc_mean_tracking_err(self, obs):
+        """
+        Calculate tracking errors for all robots.
         Returns:
-            dict: A dictionary containing evaluation metrics.
+            lin_err (torch.Tensor): RMSE of linear velocity tracking in x, y.
+            ang_err (torch.Tensor): RMSE of angular velocity tracking in z.
         """
-        if self.num_steps == 0:
-            return {
-                "calc_lin_vel_error": 0,
-                "calc_ang_vel_error": 0,
-                "lin_vel_error": 0,
-                "ang_vel_error": 0,
-                "failures": 0,
-                "time_out": 0,
-            }
+        data = get_attr_recursively(self.env, "scene").articulations["robot"].data
+        t_dim_exist = data.body_lin_vel_w.dim() == 3
 
-        metrics = {
-            "calc_lin_vel_error_rate": self._convert_to_rate(self.log["metrics"]["calc_lin_vel_error"]),
-            "calc_ang_vel_error_rate": self._convert_to_rate(self.log["metrics"]["calc_ang_vel_error"]),
-            "failure_rate": self._convert_to_rate(self.log["metrics"]["failures"]) / self.num_envs,
-            "time_out_rate": self._convert_to_rate(self.log["metrics"]["time_out"]) / self.num_envs,
-        }
-        return metrics
+        lin_vel = data.body_lin_vel_w[:, -1, :] if t_dim_exist else data.body_lin_vel_w
+        ang_vel = data.body_ang_vel_w[:, -1, :] if t_dim_exist else data.body_ang_vel_w
+        student_obs = obs.shape[-1] == 45
 
-    def get_signals(self):
-        """
-        Get the logged signals.
+        # Extract commands from observations
+        if t_dim_exist:
+            cmd = obs[:, -1, 6:9] if student_obs else obs[:, -1, 9:12]
+        else:
+            cmd = obs[:, 6:9] if student_obs else obs[:, 9:12]
 
-        Returns:
-            dict: A dictionary containing the logged signals.
-        """
-        return self.log["signals"]
+        lin_err = torch.sqrt((torch.norm(lin_vel[:, :2] - cmd[:, :2], p=2, dim=-1) ** 2).mean())
+        ang_err = torch.sqrt(((ang_vel[:, 2] - cmd[:, 2]) ** 2).mean())
+
+        return lin_err, ang_err
 
     def print_metrics(self):
         """Print evaluation metrics."""
@@ -176,56 +178,14 @@ class EvaluateWrapper(gym.Wrapper):
 
         print("-------------- Simulation info --------------")
         print(f"Number of Robots: {self.num_envs}")
-        print(f"Number of episodes: {int(self.num_steps/self.max_episode_length)}")
-        print(f"Simulation Time Step: {self.dt} seconds")
-        print(f"Evaluation Time per Robot: {int(self.dt * self.num_steps)} seconds")
+        print(f"Number of Episodes: {int(self.num_steps/self.max_episode_length)}")
+        print(f"Simulation Time Step: {self.dt} sec")
+        print(f"Evaluation Time per Robot: {int(self.dt * (self.num_steps+1))} sec")
         print(f"Total Simulation Real Time: {readable_time}")
 
         print("-------------- Evaluation Metrics --------------")
-        print("Note: rate = per robot per minute")
-        print(f"Calculated Linear Velocity Error rate: {self.get_metrics()['calc_lin_vel_error_rate']:.4f}")
-        print(f"Calculated Angular Velocity Error rate: {self.get_metrics()['calc_ang_vel_error_rate']:.4f}")
-        print(f"Timeout rate: {self.get_metrics()['time_out_rate']:.4f}")
-        print(f"Failure/Base Contact rate: {self.get_metrics()['failure_rate']:.4f}")
-
-    def _convert_to_rate(self, metric):
-        """
-        Convert a metric to a rate per minute.
-
-        Args:
-        metric (float): The metric value.
-
-        Returns:
-        float: The metric rate per minute.
-        """
-        return metric / (self.num_steps * self.dt) * 60
-
-    def _calc_tracking_err(self, obs):
-        """
-        Calculate the tracking error for all the robots.
-
-        Args:
-            obs (ObsWrapper): Observation wrapper.
-
-        Returns:
-            tuple[float, float]: Tuple of linear and angular tracking errors.
-        """
-        assert obs.shape[-1] in [45, 48], f"[ERROR]: Got unexpected observation shape {obs.shape[-1]}."
-
-        data = get_attr_recursively(self.env, "scene").articulations["robot"].data
-        t_dim_exist = data.body_lin_vel_w.dim() == 3
-        lin_vel = data.body_lin_vel_w[:, -1, :] if t_dim_exist else data.body_lin_vel_w
-        ang_vel = data.body_ang_vel_w[:, -1, :] if t_dim_exist else data.body_ang_vel_w
-        student_obs = obs.shape[-1] == 45
-
-        if t_dim_exist:
-            cmd = obs[:, -1, 6:9] if student_obs else obs[:, -1, 9:12]
-        else:
-            cmd = obs[:, 6:9] if student_obs else obs[:, 9:12]
-
-        # Compute RMSE for linear velocity (for all robots) taking only the x and y components
-        lin_err = torch.sqrt(torch.mean((lin_vel[:, :2] - cmd[:, :2]) ** 2))
-        # Compute RMSE for angular velocity taking only the z component
-        ang_err = torch.sqrt(torch.mean((ang_vel[:, 2] - cmd[:, 2]) ** 2))
-
-        return lin_err.item(), ang_err.item()
+        print("Note: Rate is per robot")
+        print(f"Linear Velocity RMSA per step: {self.log['metrics']['lin_vel_error']:.4f}")
+        print(f"Angular Velocity RMSA per step: {self.log['metrics']['ang_vel_error']:.4f}")
+        print(f"Timeout Rate per min: {self.log['metrics']['time_out']:.4f}")
+        print(f"Failure Rate per min: {self.log['metrics']['failures']:.4f}")

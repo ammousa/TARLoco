@@ -175,6 +175,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg: task_config.agent_cfg):  # ty
     if agent_cfg.logger == "wandb":
         agent_cfg.note = args_cli.note
         agent_cfg.group = args_cli.group
+        agent_cfg.job_type = args_cli.job_type
         agent_cfg.wandb_continue_run = args_cli.wandb_continue_run if args_cli.wandb_continue_run else None
     sys.argv = original_argv  # Restore the original sys.argv before wandb initialization
     print(f"[INFO]: Loggings with {agent_cfg.logger} is selected")
@@ -244,7 +245,9 @@ if __name__ == "__main__":
     except Exception as err:
         carb.log_error(err)
         carb.log_error(traceback.format_exc())
-        raise err
+        logging.error(f"An error occurred: {err}")
+        logging.error(traceback.format_exc())
+        os._exit(1)
     finally:
         # close sim app
         simulation_app.close()

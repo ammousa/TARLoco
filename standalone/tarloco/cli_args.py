@@ -42,6 +42,7 @@ def add_rsl_rl_args(parser: argparse.ArgumentParser):
     )
     arg_group.add_argument("--note", type=str, default=None, help="Note for the task to be sent to wandb.")
     arg_group.add_argument("--group", type=str, default=None, help="Group for the task to be sent to wandb.")
+    arg_group.add_argument("--job_type", type=str, default=None, help="Job Type for the task to be sent to wandb.")
     arg_group.add_argument(
         "--log_project_name", type=str, default=None, help="Name of the logging project when using wandb or neptune."
     )

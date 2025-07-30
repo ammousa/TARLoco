@@ -12,7 +12,6 @@
 
 from isaaclab.utils import configclass
 
-from .base import ObservationsCfg  # Ensure ObservationsCfg is imported
 from .base import (
     BaseLocomotionVelocityEnvCfg,
     EvaluationConfigMixin,
@@ -48,6 +47,14 @@ class TarGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
 
 
 @configclass
+class TarGo1LocomotionVelocityRoughEnvEvalCfg(EvaluationConfigMixin, TarGo1LocomotionVelocityRoughEnvCfg):
+    """Evaluation Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        super().__post_init__()
+
+
+@configclass
 class TarMlpGo1LocomotionVelocityRoughEnvCfg(TarGo1LocomotionVelocityRoughEnvCfg):
     """Configuration for Rough terrain."""
 
@@ -59,6 +66,14 @@ class TarMlpGo1LocomotionVelocityRoughEnvCfg(TarGo1LocomotionVelocityRoughEnvCfg
 
 
 @configclass
+class TarMlpGo1LocomotionVelocityRoughEnvEvalCfg(EvaluationConfigMixin, TarMlpGo1LocomotionVelocityRoughEnvCfg):
+    """Evaluation Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        super().__post_init__()
+
+
+@configclass
 class TarTcnGo1LocomotionVelocityRoughEnvCfg(TarGo1LocomotionVelocityRoughEnvCfg):
     """Configuration for Rough terrain."""
 
@@ -67,6 +82,14 @@ class TarTcnGo1LocomotionVelocityRoughEnvCfg(TarGo1LocomotionVelocityRoughEnvCfg
         super().__post_init__()
         # Policy
         self.observations.policy.history_length = 50
+
+
+@configclass
+class TarTcnGo1LocomotionVelocityRoughEnvEvalCfg(EvaluationConfigMixin, TarTcnGo1LocomotionVelocityRoughEnvCfg):
+    """Evaluation Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        super().__post_init__()
 
 
 @configclass
@@ -94,6 +117,14 @@ class TarMlpNoPrivGo1LocomotionVelocityRoughEnvCfg(TarMlpGo1LocomotionVelocityRo
 
 
 @configclass
+class TarMlpNoPrivGo1LocomotionVelocityRoughEnvEvalCfg(EvaluationConfigMixin, TarMlpNoPrivGo1LocomotionVelocityRoughEnvCfg):
+    """Evaluation Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        super().__post_init__()
+
+
+@configclass
 class TarRnnNoPrivGo1LocomotionVelocityRoughEnvCfg(TarMlpNoPrivGo1LocomotionVelocityRoughEnvCfg):
     """Configuration for Rough terrain."""
 
@@ -102,6 +133,14 @@ class TarRnnNoPrivGo1LocomotionVelocityRoughEnvCfg(TarMlpNoPrivGo1LocomotionVelo
         super().__post_init__()
         self.observations.policy.history_length = 4
         self.observations.critic.history_length = 4
+
+
+@configclass
+class TarRnnNoPrivGo1LocomotionVelocityRoughEnvEvalCfg(EvaluationConfigMixin, TarRnnNoPrivGo1LocomotionVelocityRoughEnvCfg):
+    """Evaluation Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        super().__post_init__()
 
 
 @configclass
@@ -126,6 +165,14 @@ class SlrGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
 
         # Disable height scanner
         del self.scene.height_scanner
+
+
+@configclass
+class SlrGo1LocomotionVelocityRoughEnvEvalCfg(EvaluationConfigMixin, SlrGo1LocomotionVelocityRoughEnvCfg):
+    """Evaluation Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        super().__post_init__()
 
 
 @configclass
@@ -158,6 +205,14 @@ class HimGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
 
 
 @configclass
+class HimGo1LocomotionVelocityRoughEnvEvalCfg(EvaluationConfigMixin, HimGo1LocomotionVelocityRoughEnvCfg):
+    """Evaluation Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        super().__post_init__()
+
+
+@configclass
 class TeacherGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
     """Configuration for Rough terrain."""
 
@@ -175,3 +230,11 @@ class TeacherGo1LocomotionVelocityRoughEnvCfg(BaseLocomotionVelocityEnvCfg):
         # Critic
         self.observations.critic.history_length = 1
         self.observations.critic.flatten_history_dim = False
+
+
+@configclass
+class TeacherGo1LocomotionVelocityRoughEnvEvalCfg(EvaluationConfigMixin, TeacherGo1LocomotionVelocityRoughEnvCfg):
+    """Evaluation Configuration for Rough terrain."""
+
+    def __post_init__(self):
+        super().__post_init__()

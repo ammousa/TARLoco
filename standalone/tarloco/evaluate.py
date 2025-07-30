@@ -220,7 +220,13 @@ def main(env_cfg: ManagerBasedRLEnvCfg, agent_cfg: task_config.agent_cfg):  # ty
     enable_logger = args_cli.logger
     if enable_logger:
         experiment_cfg = {"resume_path": resume_path, "dt": dt, "args_cli": args_cli}
-        logger = LoggerWrapper(experiment_cfg)
+        logger = LoggerWrapper(
+            cfg={
+                **experiment_cfg,
+                "runner_cfg": agent_cfg.to_dict(),
+                "env_cfg": env_cfg.to_dict(),  # type: ignore
+            }
+        )
 
     # init vars
     step_count = 0
@@ -263,7 +269,7 @@ if __name__ == "__main__":
     except Exception as err:
         carb.log_error(err)
         carb.log_error(traceback.format_exc())
-        raise err
+        os._exit(1)
     finally:
         # close sim app
         simulation_app.close()

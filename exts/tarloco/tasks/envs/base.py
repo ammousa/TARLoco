@@ -446,7 +446,7 @@ class EvaluationConfigMixin:
     def __post_init__(self):
         super().__post_init__()
         # Make a smaller scene for evaluation
-        self.scene.num_envs = 50
+        self.scene.num_envs = 1000
         self.scene.env_spacing = 2.5
         # Spawn the robot randomly in the grid
         self.scene.terrain.max_init_terrain_level = None

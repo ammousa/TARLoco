@@ -78,6 +78,7 @@ class LoggerWrapper:
                 self.summary_writer = NeptuneSummaryWriter(log_dir=self.log_dir, flush_secs=10, cfg=self.args_cli)
             elif self.logger_type == "wandb":
                 self.summary_writer = WandbSummaryWriter(log_dir=self.log_dir, flush_secs=10, locs=locals())
+                self.summary_writer.log_config(runner_cfg=self.cfg["runner_cfg"], env_cfg=self.cfg["env_cfg"])
             elif self.logger_type == "tensorboard":
                 from torch.utils.tensorboard import SummaryWriter
 
@@ -343,12 +344,13 @@ class WandbSummaryWriter(SummaryWriter):
         super().__init__(log_dir=log_dir, flush_secs=flush_secs)
 
         experiment_name = getattr(locs["self"], "experiment_name", None)
-        project = (experiment_name + "_Eval") if experiment_name else locs["self"].cfg["experiment_name"]
+        project = (experiment_name + "_eval") if experiment_name else locs["self"].cfg["experiment_name"]
         entity = "amrmousa-m"
         args_cli = getattr(locs["self"], "args_cli", None)
         note = getattr(args_cli, "note", "") or locs["self"].cfg.get("note", "") or ""
         note = note.replace("_", " ") if note else ""
         group = getattr(args_cli, "group", None) or locs["self"].cfg.get("group", None)
+        job_type = getattr(args_cli, "job_type", None) or locs["self"].cfg.get("job_type", None)
 
         continue_id = None
         wandb_continue_run = locs["self"].cfg.get("wandb_continue_run", None) or getattr(
@@ -362,6 +364,7 @@ class WandbSummaryWriter(SummaryWriter):
             entity=entity,
             notes=note,
             group=group,
+            job_type=job_type,
             id=continue_id,
             resume="allow",
         )
