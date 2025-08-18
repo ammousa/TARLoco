@@ -66,8 +66,8 @@ parser.add_argument(
 parser.add_argument(
     "--export_model",
     type=str,
-    default="onnx",
-    help="Export the model to onnx or jit. Default: onnx",
+    default=None,
+    help="Export the model to onnx or jit. Default: None",
 )
 # append RSL-RL cli arguments
 cli_args.add_rsl_rl_args(parser)
