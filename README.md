@@ -6,9 +6,8 @@
 [![Linux platform](https://img.shields.io/badge/platform-linux--64-orange.svg)](https://releases.ubuntu.com/22.04/)
 [![IsaacLab v2.1.0](https://img.shields.io/badge/IsaacLab-2.1.0-lightgrey.svg)](https://github.com/isaac-sim/IsaacLab)
 [![CC BY-NC-SA 4.0 License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-yellow.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-
 <p align="center">
-  <video src="docs/intro.mp4" alt="TARLoco Demo" width="100%" muted autoplay loop></video>
+  <video src="https://github.com/user-attachments/assets/b774d124-9236-4970-9d19-99c50bb4d612" control style="max-width: 100%;"></video>
 </p>
   <br>
   <em>Official implementation of our IROS 2025 paper | <a href="https://amrmousa.com/TARLoco/">🌐 Project Website</a> with videos and results</em>
@@ -29,7 +28,7 @@
 
 ## ❓ Why TARLoco?
 
-![TARLoco Architecture](docs/arch.gif)
+![TARLoco Architecture](assets/arch.gif)
 
 Robust blind locomotion must adapt to **unknown dynamics** (e.g., mass, friction, terrain). TARLoco aligns a student’s proprioceptive representation with a teacher’s **privileged latent** using **contrastive learning**, yielding policies that are:
 
