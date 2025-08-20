@@ -8,7 +8,8 @@
 [![CC BY-NC-SA 4.0 License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-yellow.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 <p align="center">
-  <img src="docs/images/index.jpg" alt="TARLoco Demo" width="85%">
+  <video src="docs/intro.mp4" alt="TARLoco Demo" width="100%" muted autoplay loop></video>
+</p>
   <br>
   <em>Official implementation of our IROS 2025 paper | <a href="https://amrmousa.com/TARLoco/">🌐 Project Website</a> with videos and results</em>
 </p>
@@ -28,7 +29,7 @@
 
 ## ❓ Why TARLoco?
 
-![TARLoco Architecture](docs/images/arch_full_1.png)
+![TARLoco Architecture](docs/arch.gif)
 
 Robust blind locomotion must adapt to **unknown dynamics** (e.g., mass, friction, terrain). TARLoco aligns a student’s proprioceptive representation with a teacher’s **privileged latent** using **contrastive learning**, yielding policies that are:
 
